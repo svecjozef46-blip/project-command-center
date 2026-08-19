@@ -36,6 +36,11 @@
   .meta-row{display:flex; flex-wrap:wrap; gap:18px; margin-top:18px; font-size:12.5px; color:rgba(255,255,255,.72);}
   .meta-row span b{color:#fff; font-weight:600;}
 
+  .session-note{
+    display:flex; align-items:center; gap:10px; background:var(--warn-bg); border:1px solid #f2ddab;
+    color:var(--warn-ink); font-size:12.5px; padding:10px 16px; border-radius:8px; margin:22px 0 6px;
+  }
+
   .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0 30px;}
   .stat-card{background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--gray); border-radius:10px; padding:16px 16px 14px;}
   .stat-card.ok{border-left-color:var(--ok-line);}
@@ -55,9 +60,12 @@
   .col-title{font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
   .col-count{font-size:11px; font-weight:700; background:var(--surface-alt); color:var(--ink-secondary); padding:2px 8px; border-radius:20px;}
   .board{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:start;}
-  .col{display:flex; flex-direction:column; gap:10px; min-height:70px; border-radius:10px; padding:4px;}
+  .col{display:flex; flex-direction:column; gap:10px; min-height:70px; border-radius:10px; padding:4px; transition:background .12s;}
+  .col.drag-over{background:var(--blue-bg); outline:2px dashed var(--blue);}
 
-  .card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; border-top:3px solid var(--gray);}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; border-top:3px solid var(--gray); cursor:grab; transition:box-shadow .12s, opacity .12s;}
+  .card:hover{box-shadow:0 2px 10px rgba(31,56,100,.08);}
+  .card.dragging{opacity:.4;}
   .card.ok{border-top-color:var(--ok-line);}
   .card.ready{border-top-color:var(--warn-line);}
   .card.plan{border-top-color:var(--gray);}
@@ -109,6 +117,10 @@
 
 <div class="wrap">
 
+  <div class="session-note">
+    ↕ Karty sa dajú ťahať myšou medzi stĺpcami — je to len na prezretie/vyskúšanie v tomto prehliadači, samo osebe sa to nikam neuloží (obnovením stránky sa poradie vráti na aktuálne skutočné).
+  </div>
+
   <div class="stat-grid">
     <div class="stat-card blue" id="stat-planned">
       <div class="stat-num" style="color:var(--blue)">3</div>
@@ -131,24 +143,24 @@
   <div class="progress-card">
     <h3>Celkový progres</h3>
     <div class="progress-track">
-      <div class="progress-seg" style="width:27.3%; background:var(--gray);">3</div>
-      <div class="progress-seg" style="width:9.1%; background:var(--warn-line);">1</div>
-      <div class="progress-seg" style="width:63.6%; background:var(--ok-line);">7</div>
+      <div class="progress-seg" id="seg-planned" style="width:27.3%; background:var(--gray);">3</div>
+      <div class="progress-seg" id="seg-ready" style="width:9.1%; background:var(--warn-line);">1</div>
+      <div class="progress-seg" id="seg-done" style="width:63.6%; background:var(--ok-line);">7</div>
     </div>
     <div class="progress-legend">
-      <span><span class="dot" style="background:var(--gray);"></span>Naplánované (3/11)</span>
-      <span><span class="dot" style="background:var(--warn-line);"></span>Prebieha (1/11)</span>
-      <span><span class="dot" style="background:var(--ok-line);"></span>Hotové (7/11)</span>
+      <span><span class="dot" style="background:var(--gray);"></span><span id="leg-planned">Naplánované (3/11)</span></span>
+      <span><span class="dot" style="background:var(--warn-line);"></span><span id="leg-ready">Prebieha (1/11)</span></span>
+      <span><span class="dot" style="background:var(--ok-line);"></span><span id="leg-done">Hotové (7/11)</span></span>
     </div>
     <div class="flow-hint">smer postupu: Naplánované → Prebieha → Hotové &nbsp;→</div>
   </div>
 
   <div class="board">
 
-    <div class="col">
-      <div class="col-title">🔵 Naplánované <span class="col-count">3</span></div>
+    <div class="col" id="col-planned" data-status="planned">
+      <div class="col-title">🔵 Naplánované <span class="col-count" id="count-planned">3</span></div>
 
-      <div class="card plan">
+      <div class="card plan" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 3 — ERP</div>
           <span class="badge plan">NAPLÁNOVANÉ</span>
@@ -158,7 +170,7 @@
         <div class="card-foot"><span>+ voliteľný Agent Skill</span><span>~3–4,75 h</span></div>
       </div>
 
-      <div class="card plan">
+      <div class="card plan" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 4 — Banky/Poisťovne</div>
           <span class="badge plan">NAPLÁNOVANÉ</span>
@@ -168,7 +180,7 @@
         <div class="card-foot"><span>—</span><span>~2,5–4 h</span></div>
       </div>
 
-      <div class="card plan redacted">
+      <div class="card plan redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 8 — Fitness Insights</div>
           <span class="badge plan">NAPLÁNOVANÉ</span>
@@ -178,10 +190,10 @@
       </div>
     </div>
 
-    <div class="col">
-      <div class="col-title">🟡 Prebieha <span class="col-count">1</span></div>
+    <div class="col" id="col-ready" data-status="ready">
+      <div class="col-title">🟡 Prebieha <span class="col-count" id="count-ready">1</span></div>
 
-      <div class="card ready redacted">
+      <div class="card ready redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 7b — Live dáta connector</div>
           <span class="badge ready">PREBIEHA</span>
@@ -191,10 +203,10 @@
       </div>
     </div>
 
-    <div class="col">
-      <div class="col-title">✅ Hotové <span class="col-count">7</span></div>
+    <div class="col" id="col-done" data-status="done">
+      <div class="col-title">✅ Hotové <span class="col-count" id="count-done">7</span></div>
 
-      <div class="card ok">
+      <div class="card ok" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 1 — Farma/Medtech</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -204,7 +216,7 @@
         <div class="card-foot"><a class="demo-link" href="https://farma-quality-agent.vercel.app" target="_blank" rel="noopener">↗ Živé demo</a><span>0 h zostáva</span></div>
       </div>
 
-      <div class="card ok">
+      <div class="card ok" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 2 — CRM</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -214,7 +226,7 @@
         <div class="card-foot"><a class="demo-link" href="https://crm-account-intelligence-agent.vercel.app" target="_blank" rel="noopener">↗ Živé demo</a><span>0 h zostáva</span></div>
       </div>
 
-      <div class="card ok">
+      <div class="card ok" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 0 — Excel Data-Quality Agent</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -223,7 +235,7 @@
         <div class="card-tags"><span class="vis-tag public">🌐 Verejné</span></div>
       </div>
 
-      <div class="card ok redacted">
+      <div class="card ok redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 5 — Gmail Inbox Copilot</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -232,7 +244,7 @@
         <div class="card-tags"><span class="vis-tag private">🔒 Súkromné</span></div>
       </div>
 
-      <div class="card ok redacted">
+      <div class="card ok redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 6 — Status & Meeting Prep Copilot</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -241,7 +253,7 @@
         <div class="card-tags"><span class="vis-tag private">🔒 Súkromné</span></div>
       </div>
 
-      <div class="card ok redacted">
+      <div class="card ok redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 7 — Osobné Financie Hub</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -250,7 +262,7 @@
         <div class="card-tags"><span class="domain-tag osobne">OSOBNÉ</span><span class="vis-tag private">🔒 Súkromné</span></div>
       </div>
 
-      <div class="card ok redacted">
+      <div class="card ok redacted" draggable="true">
         <div class="card-top">
           <div class="card-name">Projekt 9 — Auto Watchlist</div>
           <span class="badge ok">HOTOVÉ</span>
@@ -267,6 +279,96 @@
   </footer>
 
 </div>
+
+<script>
+(function(){
+  var colConfig = {
+    planned: { badgeClass:'plan',  badgeText:'NAPLÁNOVANÉ', cardClass:'plan',  label:'Naplánované' },
+    ready:   { badgeClass:'ready', badgeText:'PREBIEHA',    cardClass:'ready', label:'Prebieha' },
+    done:    { badgeClass:'ok',    badgeText:'HOTOVÉ',      cardClass:'ok',    label:'Hotové' }
+  };
+  var order = ['planned','ready','done'];
+  var board = document.querySelector('.board');
+  var dragged = null;
+
+  function attachCard(card){
+    card.addEventListener('dragstart', function(e){
+      dragged = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', function(){
+      card.classList.remove('dragging');
+      dragged = null;
+      recompute();
+    });
+  }
+  board.querySelectorAll('.card').forEach(attachCard);
+
+  board.querySelectorAll('.col').forEach(function(col){
+    col.addEventListener('dragover', function(e){
+      e.preventDefault();
+      col.classList.add('drag-over');
+      var after = getDragAfterElement(col, e.clientY);
+      if(!dragged) return;
+      if(after == null){ col.appendChild(dragged); }
+      else { col.insertBefore(dragged, after); }
+    });
+    col.addEventListener('dragleave', function(e){
+      if(e.target === col) col.classList.remove('drag-over');
+    });
+    col.addEventListener('drop', function(e){
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if(!dragged) return;
+      var status = col.dataset.status;
+      var cfg = colConfig[status];
+      dragged.className = 'card ' + cfg.cardClass + (dragged.className.indexOf('redacted') > -1 ? ' redacted' : '');
+      dragged.setAttribute('draggable', 'true');
+      var badge = dragged.querySelector('.badge');
+      if(badge){
+        badge.className = 'badge ' + cfg.badgeClass;
+        badge.textContent = cfg.badgeText;
+      }
+      recompute();
+    });
+  });
+
+  function getDragAfterElement(col, y){
+    var cards = Array.prototype.slice.call(col.querySelectorAll('.card:not(.dragging)'));
+    var closest = { offset: -Infinity, element: null };
+    cards.forEach(function(child){
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if(offset < 0 && offset > closest.offset){
+        closest = { offset: offset, element: child };
+      }
+    });
+    return closest.element;
+  }
+
+  function recompute(){
+    var counts = {};
+    order.forEach(function(status){
+      var col = document.getElementById('col-' + status);
+      var n = col.querySelectorAll('.card').length;
+      counts[status] = n;
+      document.getElementById('count-' + status).textContent = n;
+    });
+    var total = order.reduce(function(sum, s){ return sum + counts[s]; }, 0);
+    order.forEach(function(status){
+      document.getElementById('stat-' + status).querySelector('.stat-num').textContent = counts[status];
+    });
+    order.forEach(function(status){
+      var pct = total ? (counts[status] / total * 100) : 0;
+      var seg = document.getElementById('seg-' + status);
+      seg.style.width = pct + '%';
+      seg.textContent = counts[status];
+      document.getElementById('leg-' + status).textContent = colConfig[status].label + ' (' + counts[status] + '/' + total + ')';
+    });
+  }
+})();
+</script>
 
 </body>
 </html>
