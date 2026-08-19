@@ -1,0 +1,272 @@
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Project Command Center",
+  "schemaVersion": 1,
+  "description": "Prehľad AI portfólio projektov (0-9): stav, popisy, odkazy na live demo appky. Verejné projekty (fiktívne demo dáta) majú plný popis; súkromné projekty (reálny Gmail/kalendár/financie/zdravie) sú viditeľné len základným popisom, bez detailov a odkazov na reálne dáta.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Portfólio — Project Command Center</title>
+<style>
+  :root{
+    --navy:#1F3864; --navy-ink:#152a4a;
+    --ink:#1c2430; --ink-secondary:#535d6b; --ink-muted:#8993a1;
+    --surface:#ffffff; --surface-alt:#f6f7f9; --border:#e3e6eb;
+    --ok-bg:#E8F7E8; --ok-ink:#0C6B0C; --ok-line:#0ca30c;
+    --warn-bg:#FFF6E0; --warn-ink:#8A5B00; --warn-line:#fab219;
+    --blue:#2a78d6; --blue-bg:#EAF2FC;
+    --aqua:#1baf7a;  --aqua-bg:#E7F8F1;
+    --orange:#eb6834; --orange-bg:#FCEBE3;
+    --violet:#4a3aa7; --violet-bg:#EFEDFA;
+    --gray:#8993a1; --gray-bg:#F1F2F4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--surface-alt); color:var(--ink); line-height:1.5;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px 56px;}
+  header.hero{background:linear-gradient(135deg,var(--navy) 0%, var(--navy-ink) 100%); color:#fff; padding:36px 24px 30px;}
+  header.hero .inner{max-width:1080px; margin:0 auto;}
+  .tag{display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:rgba(255,255,255,.14); padding:4px 10px; border-radius:20px; margin-bottom:14px;}
+  h1{font-size:26px; margin:0 0 8px; font-weight:700; letter-spacing:-.01em;}
+  .subtitle{font-size:14px; color:rgba(255,255,255,.82); margin:0; max-width:680px;}
+  .meta-row{display:flex; flex-wrap:wrap; gap:18px; margin-top:18px; font-size:12.5px; color:rgba(255,255,255,.72);}
+  .meta-row span b{color:#fff; font-weight:600;}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0 30px;}
+  .stat-card{background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--gray); border-radius:10px; padding:16px 16px 14px;}
+  .stat-card.ok{border-left-color:var(--ok-line);}
+  .stat-card.warn{border-left-color:var(--warn-line);}
+  .stat-card.blue{border-left-color:var(--blue);}
+  .stat-num{font-size:28px; font-weight:700; letter-spacing:-.02em;}
+  .stat-label{font-size:12.5px; color:var(--ink-secondary); margin-top:2px;}
+
+  .progress-card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:30px;}
+  .progress-card h3{margin:0 0 10px; font-size:13px; color:var(--ink-secondary); font-weight:600; text-transform:uppercase; letter-spacing:.03em;}
+  .progress-track{background:var(--surface-alt); border-radius:8px; height:22px; overflow:hidden; display:flex;}
+  .progress-seg{height:100%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff;}
+  .progress-legend{display:flex; gap:18px; margin-top:10px; font-size:12px; color:var(--ink-secondary); flex-wrap:wrap;}
+  .progress-legend .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:5px;}
+  .flow-hint{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-muted); margin-top:10px;}
+
+  .col-title{font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
+  .col-count{font-size:11px; font-weight:700; background:var(--surface-alt); color:var(--ink-secondary); padding:2px 8px; border-radius:20px;}
+  .board{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:start;}
+  .col{display:flex; flex-direction:column; gap:10px; min-height:70px; border-radius:10px; padding:4px;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; border-top:3px solid var(--gray);}
+  .card.ok{border-top-color:var(--ok-line);}
+  .card.ready{border-top-color:var(--warn-line);}
+  .card.plan{border-top-color:var(--gray);}
+  .card.redacted{background:var(--surface-alt);}
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .card-name{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .badge{display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0;}
+  .badge.ok{background:var(--ok-bg); color:var(--ok-ink);}
+  .badge.ready{background:var(--warn-bg); color:var(--warn-ink);}
+  .badge.plan{background:var(--gray-bg); color:var(--ink-secondary);}
+  .card-desc{font-size:12.5px; color:var(--ink-secondary); margin-top:6px;}
+  .card-desc.muted{font-style:italic; color:var(--ink-muted);}
+  .card-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--ink-muted);}
+  .domain-tag{display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px;}
+  .domain-tag.farma{background:var(--aqua-bg); color:#0c7a52;}
+  .domain-tag.crm{background:var(--blue-bg); color:var(--blue);}
+  .domain-tag.erp{background:var(--orange-bg); color:#b8471f;}
+  .domain-tag.banky{background:var(--violet-bg); color:var(--violet);}
+  .domain-tag.osobne{background:var(--gray-bg); color:var(--ink-secondary);}
+  .card-tags{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:8px;}
+  .vis-tag{display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap;}
+  .vis-tag.public{background:var(--ok-bg); color:var(--ok-ink);}
+  .vis-tag.private{background:var(--warn-bg); color:var(--warn-ink);}
+  .demo-link{color:var(--blue); text-decoration:none; font-weight:600;}
+  .demo-link:hover{text-decoration:underline;}
+
+  footer{border-top:1px solid var(--border); margin-top:36px; padding-top:18px; font-size:12px; color:var(--ink-muted); line-height:1.7;}
+  footer b{color:var(--ink-secondary);}
+
+  @media (max-width:820px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .board{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="tag">AI portfólio · Kariera 2026</span>
+    <h1>Project Command Center</h1>
+    <p class="subtitle">Prehľad projektov, na ktorých pracujem — AI demo appky pre portfólio aj súbežné osobné projekty. Karty postupujú zľava doprava podľa pripravenosti (Naplánované → Prebieha → Hotové).</p>
+    <div class="meta-row">
+      <span>Vlastník: <b>Jozef Švec</b></span>
+      <span>Posledná aktualizácia: <b>19. 8. 2026</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="stat-grid">
+    <div class="stat-card blue" id="stat-planned">
+      <div class="stat-num" style="color:var(--blue)">3</div>
+      <div class="stat-label">Naplánované</div>
+    </div>
+    <div class="stat-card warn" id="stat-ready">
+      <div class="stat-num" style="color:var(--warn-ink)">1</div>
+      <div class="stat-label">Prebieha</div>
+    </div>
+    <div class="stat-card ok" id="stat-done">
+      <div class="stat-num" style="color:var(--ok-ink)">7</div>
+      <div class="stat-label">Hotové</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">11</div>
+      <div class="stat-label">Projektov spolu</div>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <h3>Celkový progres</h3>
+    <div class="progress-track">
+      <div class="progress-seg" style="width:27.3%; background:var(--gray);">3</div>
+      <div class="progress-seg" style="width:9.1%; background:var(--warn-line);">1</div>
+      <div class="progress-seg" style="width:63.6%; background:var(--ok-line);">7</div>
+    </div>
+    <div class="progress-legend">
+      <span><span class="dot" style="background:var(--gray);"></span>Naplánované (3/11)</span>
+      <span><span class="dot" style="background:var(--warn-line);"></span>Prebieha (1/11)</span>
+      <span><span class="dot" style="background:var(--ok-line);"></span>Hotové (7/11)</span>
+    </div>
+    <div class="flow-hint">smer postupu: Naplánované → Prebieha → Hotové &nbsp;→</div>
+  </div>
+
+  <div class="board">
+
+    <div class="col">
+      <div class="col-title">🔵 Naplánované <span class="col-count">3</span></div>
+
+      <div class="card plan">
+        <div class="card-top">
+          <div class="card-name">Projekt 3 — ERP</div>
+          <span class="badge plan">NAPLÁNOVANÉ</span>
+        </div>
+        <div class="card-desc">Master Data & Exception Agent. Nadväzuje na Projekt 0 a reálnu ERP/SAP skúsenosť.</div>
+        <div class="card-tags"><span class="domain-tag erp">ERP</span><span class="vis-tag public">🌐 Verejné</span></div>
+        <div class="card-foot"><span>+ voliteľný Agent Skill</span><span>~3–4,75 h</span></div>
+      </div>
+
+      <div class="card plan">
+        <div class="card-top">
+          <div class="card-name">Projekt 4 — Banky/Poisťovne</div>
+          <span class="badge plan">NAPLÁNOVANÉ</span>
+        </div>
+        <div class="card-desc">Regulatory Change & Compliance Impact Agent. Nadväzuje na DMS/IAM compliance skúsenosť z PwC.</div>
+        <div class="card-tags"><span class="domain-tag banky">BANKY</span><span class="vis-tag public">🌐 Verejné</span></div>
+        <div class="card-foot"><span>—</span><span>~2,5–4 h</span></div>
+      </div>
+
+      <div class="card plan redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 8 — Fitness Insights</div>
+          <span class="badge plan">NAPLÁNOVANÉ</span>
+        </div>
+        <div class="card-desc">Nápad prepojiť dáta z fitness trackera a digitálnej váhy s AI na sledovanie fitness plánu.</div>
+        <div class="card-tags"><span class="domain-tag osobne">OSOBNÉ</span><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-title">🟡 Prebieha <span class="col-count">1</span></div>
+
+      <div class="card ready redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 7b — Live dáta connector</div>
+          <span class="badge ready">PREBIEHA</span>
+        </div>
+        <div class="card-desc">Plán rozšíriť osobný Financie Hub o pripojenie na live dáta z investičnej platformy.</div>
+        <div class="card-tags"><span class="domain-tag osobne">OSOBNÉ</span><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-title">✅ Hotové <span class="col-count">7</span></div>
+
+      <div class="card ok">
+        <div class="card-top">
+          <div class="card-name">Projekt 1 — Farma/Medtech</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">Quality Deviation & CAPA Insight Agent — živá appka (Next.js + Supabase + Claude tool-use agent) nasadená na Verceli. Dashboard odchýlok a CAPA po termíne, mesačná AI správa s grafmi a PDF exportom, voľné "Opýtaj sa agenta" pole s grafom a Agent Activity Log panel.</div>
+        <div class="card-tags"><span class="domain-tag farma">FARMA</span><span class="vis-tag public">🌐 Verejné</span></div>
+        <div class="card-foot"><a class="demo-link" href="https://farma-quality-agent.vercel.app" target="_blank" rel="noopener">↗ Živé demo</a><span>0 h zostáva</span></div>
+      </div>
+
+      <div class="card ok">
+        <div class="card-top">
+          <div class="card-name">Projekt 2 — CRM</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">Account Intelligence Agent (AI Sales Co-Pilot) — živá appka (Next.js + Supabase + Claude tool-use agent) nasadená na Verceli, zámerne odlišný vizuál od Farma appky (fialová/zlatá namiesto navy) - interaktívny kanban pohľad na pipeline podľa štádia, radiálny win-rate gauge, animované KPI dlaždice. AI Brief, návrh follow-up e-mailu, denný digest a voľné "Opýtaj sa agenta" pole s grafom a Agent Activity Log panelom.</div>
+        <div class="card-tags"><span class="domain-tag crm">CRM</span><span class="vis-tag public">🌐 Verejné</span></div>
+        <div class="card-foot"><a class="demo-link" href="https://crm-account-intelligence-agent.vercel.app" target="_blank" rel="noopener">↗ Živé demo</a><span>0 h zostáva</span></div>
+      </div>
+
+      <div class="card ok">
+        <div class="card-top">
+          <div class="card-name">Projekt 0 — Excel Data-Quality Agent</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">AI agent nad ERP demo dátami: fuzzy duplicity dodávateľov + cenové/množstevné výnimky objednávok. 311 vzorcov, 0 chýb.</div>
+        <div class="card-tags"><span class="vis-tag public">🌐 Verejné</span></div>
+      </div>
+
+      <div class="card ok redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 5 — Gmail Inbox Copilot</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">AI agent, ktorý triedi e-maily v schránke do kategórií a pripravuje návrhy odpovedí.</div>
+        <div class="card-tags"><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+
+      <div class="card ok redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 6 — Status & Meeting Prep Copilot</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">AI agent, ktorý pripraví podklady (prep brief) pred pracovným stretnutím na základe kalendára a e-mailovej komunikácie.</div>
+        <div class="card-tags"><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+
+      <div class="card ok redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 7 — Osobné Financie Hub</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">Osobný dashboard na sledovanie investičného portfólia a financií.</div>
+        <div class="card-tags"><span class="domain-tag osobne">OSOBNÉ</span><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+
+      <div class="card ok redacted">
+        <div class="card-top">
+          <div class="card-name">Projekt 9 — Auto Watchlist</div>
+          <span class="badge ok">HOTOVÉ</span>
+        </div>
+        <div class="card-desc">Automatizovaný denný prehľad ponúk na aute podľa vlastných kritérií (naplánovaná AI úloha).</div>
+        <div class="card-tags"><span class="domain-tag osobne">OSOBNÉ</span><span class="vis-tag private">🔒 Súkromné</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Prehľad aktuálnych a plánovaných projektov (AI aplikácie s tool-use agentmi nad demo dátami, plus súbežné osobné projekty). Karty označené <b>🔒 Súkromné</b> obsahujú reálne osobné dáta, preto sú tu zámerne bez detailov.
+  </footer>
+
+</div>
+
+</body>
+</html>
